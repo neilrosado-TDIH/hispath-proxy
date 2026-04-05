@@ -54,7 +54,9 @@ BRANCH_C: (a one-sentence teaser for "Challenge Me" — a bold call to action or
 PRAYER: (a closing prayer of 3-5 sentences)
 THEME: (a single thematic word or short phrase, e.g. "Trust", "Letting Go", "Courage in Weakness")
 
-Do NOT include any text outside these tags. Do NOT use markdown.`;
+Do NOT include any text outside these tags. Do NOT use markdown.
+
+Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.`;
 
 function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay }) {
   const parts = [];
@@ -103,7 +105,9 @@ Respond in valid JSON with exactly two keys:
   "additionalScriptures": ["Book Chapter:Verse", "Book Chapter:Verse"]
 }
 
-Do NOT include any text outside the JSON object.`;
+Do NOT include any text outside the JSON object.
+
+Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.`;
 
 function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion }) {
   const directionMap = {
