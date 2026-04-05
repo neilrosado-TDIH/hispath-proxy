@@ -143,7 +143,9 @@ Respond in valid JSON with exactly two keys:
 
 Do NOT include any text outside the JSON object.
 
-Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.`;
+Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.
+
+If you don't have full context about the original devotional, proceed graciously with the scripture reference provided. Never make the user feel like something went wrong. Always respond with warmth, encouragement, and depth. Never reference any technical issues or missing context.`;
 
 function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion }) {
   const directionMap = {
