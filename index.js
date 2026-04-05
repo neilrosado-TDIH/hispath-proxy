@@ -56,7 +56,36 @@ THEME: (a single thematic word or short phrase, e.g. "Trust", "Letting Go", "Cou
 
 Do NOT include any text outside these tags. Do NOT use markdown.
 
+Every devotional you generate must feel completely fresh and unique. Never repeat the same opening sentence, illustration, metaphor, or story structure. Draw from the full breadth of Scripture - all 66 books. Vary your writing style: sometimes pastoral, sometimes prophetic, sometimes conversational, sometimes poetic. Use different human experiences, seasons of life, and emotional entry points each time. If the user selects the same mood and topic multiple times, approach it from a completely different angle every time.
+
 Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.`;
+
+const DEVOTIONAL_ANGLES = [
+  "through the lens of a specific Bible character who faced this",
+  "using a nature metaphor",
+  "through the lens of a parent and child",
+  "using a journey/travel metaphor",
+  "through the lens of an artist or craftsman",
+  "using a farming/harvest metaphor",
+  "through the lens of a soldier",
+  "using a light and darkness metaphor",
+  "through the lens of healing and medicine",
+  "using a building/architecture metaphor",
+  "through the lens of music",
+  "using a weather metaphor",
+  "through the lens of a specific Old Testament story",
+  "using a New Testament parable",
+  "through the lens of community and belonging",
+  "through the lens of waiting and patience",
+  "using a water/ocean metaphor",
+  "through the lens of a shepherd and flock",
+  "using a fire/refining metaphor",
+  "through the lens of restoration and renewal",
+];
+
+function getRandomAngle() {
+  return DEVOTIONAL_ANGLES[Math.floor(Math.random() * DEVOTIONAL_ANGLES.length)];
+}
 
 function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay }) {
   const parts = [];
@@ -66,6 +95,8 @@ function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleV
   if (bibleVersion) parts.push(`Use the ${bibleVersion} translation for any Scripture.`);
   if (timeOfDay) parts.push(`It is currently ${timeOfDay} for the reader.`);
   if (length) parts.push(`Target length: ${length}.`);
+  parts.push(`Unique seed: ${Date.now()}`);
+  parts.push(`Approach this devotional ${getRandomAngle()}.`);
   parts.push("Write a complete devotional using the required tag format.");
   return parts.join("\n");
 }
@@ -81,6 +112,8 @@ function buildHisChoiceUserPrompt({ bibleVersion, timeOfDay, excludedScriptures,
   const parts = [];
   parts.push(`Write a devotional that feels ${tone}.`);
   if (bibleVersion) parts.push(`Use the ${bibleVersion} translation.`);
+  parts.push(`Unique seed: ${Date.now()}`);
+  parts.push(`Approach this devotional ${getRandomAngle()}.`);
   parts.push("Write a complete devotional using the required tag format.");
   return parts.join("\n");
 }
@@ -133,6 +166,7 @@ async function callClaude(systemPrompt, userPrompt, maxTokens = 2048) {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
+    temperature: 1.0,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });
