@@ -181,16 +181,38 @@ app.post("/api/branch", async (req, res) => {
     const userPrompt = buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion });
     const text = await callClaude(BRANCH_SYSTEM, userPrompt, 1500);
 
-    // Parse JSON from Claude's response
-    const json = JSON.parse(text);
-    res.json(json);
-  } catch (err) {
-    console.error("POST /api/branch error:", err);
-    if (err instanceof SyntaxError) {
-      res.status(502).json({ error: "Failed to parse branch response." });
-    } else {
-      res.status(500).json({ error: "Failed to generate branch content." });
+    console.log("POST /api/branch raw Claude response:", text);
+
+    // Try to extract JSON from the response — Claude may wrap it in markdown fences
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (_e) {
+      // Try extracting JSON from markdown code fences
+      const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) {
+        try {
+          parsed = JSON.parse(fenceMatch[1].trim());
+        } catch (_e2) {
+          console.error("POST /api/branch failed to parse fenced JSON:", fenceMatch[1]);
+        }
+      }
     }
+
+    // If we successfully parsed JSON, normalise and return it
+    if (parsed && typeof parsed === "object") {
+      res.json({
+        response: parsed.response || "",
+        additionalScriptures: Array.isArray(parsed.additionalScriptures) ? parsed.additionalScriptures : [],
+      });
+    } else {
+      // Fallback: return raw text as the response
+      console.warn("POST /api/branch returning raw text fallback");
+      res.json({ response: text, additionalScriptures: [] });
+    }
+  } catch (err) {
+    console.error("POST /api/branch error:", err.message, err.stack);
+    res.status(500).json({ error: "Failed to generate branch content." });
   }
 });
 
