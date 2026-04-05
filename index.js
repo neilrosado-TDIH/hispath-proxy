@@ -127,7 +127,7 @@ function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice
 
 async function callClaude(systemPrompt, userPrompt, maxTokens = 2048) {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
