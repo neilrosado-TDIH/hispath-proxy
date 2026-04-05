@@ -87,7 +87,7 @@ function getRandomAngle() {
   return DEVOTIONAL_ANGLES[Math.floor(Math.random() * DEVOTIONAL_ANGLES.length)];
 }
 
-function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay }) {
+function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay, excludedScriptures }) {
   const parts = [];
   if (mood) parts.push(`The reader is feeling: ${mood}.`);
   if (focusTopic) parts.push(`They want to focus on: ${focusTopic}.`);
@@ -95,6 +95,9 @@ function buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleV
   if (bibleVersion) parts.push(`Use the ${bibleVersion} translation for any Scripture.`);
   if (timeOfDay) parts.push(`It is currently ${timeOfDay} for the reader.`);
   if (length) parts.push(`Target length: ${length}.`);
+  if (excludedScriptures && excludedScriptures.length > 0) {
+    parts.push(`\nIMPORTANT: Do not use any of these scripture references that have already been used recently: ${excludedScriptures.join(', ')}. Choose a completely different passage.`);
+  }
   parts.push(`Unique seed: ${Date.now()}`);
   parts.push(`Approach this devotional ${getRandomAngle()}.`);
   parts.push("Write a complete devotional using the required tag format.");
@@ -185,8 +188,8 @@ app.get("/api/health", (_req, res) => {
 // 2. Devotional
 app.post("/api/devotional", async (req, res) => {
   try {
-    const { mood, focusTopic, length, heartText, bibleVersion, timeOfDay } = req.body;
-    const userPrompt = buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay });
+    const { mood, focusTopic, length, heartText, bibleVersion, timeOfDay, excludedScriptures } = req.body;
+    const userPrompt = buildDevotionalUserPrompt({ mood, focusTopic, length, heartText, bibleVersion, timeOfDay, excludedScriptures });
     const text = await callClaude(DEVOTIONAL_SYSTEM, userPrompt);
     res.json({ response: text });
   } catch (err) {
