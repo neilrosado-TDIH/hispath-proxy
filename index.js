@@ -157,7 +157,7 @@ Respond in valid JSON with exactly two keys:
 }
 
 Rules:
-- additionalScriptures must contain exactly 3 scripture references as strings
+- additionalScriptures must contain exactly 3 scripture references as strings, never more than 3
 - Choose verses specifically relevant to the pathway type and devotional theme
 - For "Go Deeper": theologically rich cross-references and parallel texts
 - For "Need Comfort": warm, reassuring verses about God's faithfulness and love
@@ -270,7 +270,7 @@ app.post("/api/branch", async (req, res) => {
 
       // Look up full verse text for each reference in parallel
       const versesWithText = await Promise.all(
-        refs.filter(Boolean).map(async (ref) => {
+        refs.filter(Boolean).slice(0, 3).map(async (ref) => {
           const verseText = await lookupVerseText(ref);
           return { reference: ref, text: verseText };
         })
