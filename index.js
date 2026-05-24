@@ -138,12 +138,22 @@ Based on the reader's chosen pathway, provide a focused, meaningful follow-up.
 Respond in valid JSON with exactly two keys:
 {
   "response": "Your follow-up reflection (300-500 words)",
-  "additionalScriptures": ["Book Chapter:Verse", "Book Chapter:Verse"]
+  "additionalScriptures": [
+    { "reference": "Book Chapter:Verse", "text": "The full verse text quoted from the specified Bible translation" },
+    { "reference": "Book Chapter:Verse", "text": "The full verse text quoted from the specified Bible translation" }
+  ]
 }
+
+Each entry in additionalScriptures MUST include both "reference" and "text". The "text" field must contain the actual verse text, not a summary or paraphrase. Quote the verse from the translation specified by the user.
+
+Choose scriptures that are specifically relevant to the pathway type:
+- "Go Deeper": theologically rich supporting passages, cross-references, and parallel texts that illuminate the original passage
+- "Need Comfort": warm, reassuring, peace-giving verses about God's faithfulness, nearness, and love
+- "Challenge Me": action-oriented, bold, convicting verses that call the reader to growth and obedience
 
 Do NOT include any text outside the JSON object.
 
-Important: Do not use em dashes (—) anywhere in your response. Use regular hyphens (-) or restructure sentences instead. Do not use en dashes (–) either.
+Important: Do not use em dashes or en dashes anywhere in your response. Use regular hyphens (-) or restructure sentences instead.
 
 If you don't have full context about the original devotional, proceed graciously with the scripture reference provided. Never make the user feel like something went wrong. Always respond with warmth, encouragement, and depth. Never reference any technical issues or missing context.`;
 
@@ -244,9 +254,19 @@ app.post("/api/branch", async (req, res) => {
 
     // If we successfully parsed JSON, normalise and return it
     if (parsed && typeof parsed === "object") {
+      // Normalise additionalScriptures: accept both string[] and object[] formats
+      let scriptures = [];
+      if (Array.isArray(parsed.additionalScriptures)) {
+        scriptures = parsed.additionalScriptures.map((item) => {
+          if (typeof item === "string") {
+            return { reference: item, text: "" };
+          }
+          return { reference: item.reference || "", text: item.text || "" };
+        });
+      }
       res.json({
         response: parsed.response || "",
-        additionalScriptures: Array.isArray(parsed.additionalScriptures) ? parsed.additionalScriptures : [],
+        additionalScriptures: scriptures,
       });
     } else {
       // Fallback: return raw text as the response
