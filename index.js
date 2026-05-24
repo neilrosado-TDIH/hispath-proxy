@@ -135,16 +135,23 @@ function buildHisChoiceSystem({ excludedScriptures, excludedThemes }) {
 const BRANCH_SYSTEM = `You are a warm, compassionate, non-denominational Christian devotional writer continuing a deeper conversation.
 Based on the reader's chosen pathway, provide a focused, meaningful follow-up.
 
-Respond in valid JSON with exactly two keys:
+Respond in valid JSON with exactly two keys: "response" and "additionalScriptures".
+
+IMPORTANT: additionalScriptures must be an array of OBJECTS, not strings. Each object must have exactly two keys: "reference" and "text". Never return a plain string array like ["Romans 8:28"]. Always return objects.
+
+Example of the CORRECT format:
 {
   "response": "Your follow-up reflection (300-500 words)",
   "additionalScriptures": [
-    { "reference": "Book Chapter:Verse", "text": "The full verse text quoted from the specified Bible translation" },
-    { "reference": "Book Chapter:Verse", "text": "The full verse text quoted from the specified Bible translation" }
+    { "reference": "Romans 8:28", "text": "And we know that in all things God works together for the good of those who love him, who have been called according to his purpose." },
+    { "reference": "Jeremiah 29:11", "text": "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future." }
   ]
 }
 
-Each entry in additionalScriptures MUST include both "reference" and "text". The "text" field must contain the actual verse text, not a summary or paraphrase. Quote the verse from the translation specified by the user.
+Example of the WRONG format (do NOT do this):
+{ "additionalScriptures": ["Romans 8:28", "Jeremiah 29:11"] }
+
+Each "text" field must contain the actual full verse text quoted from the translation specified by the user. Do not summarize or paraphrase - quote the verse directly.
 
 Choose scriptures that are specifically relevant to the pathway type:
 - "Go Deeper": theologically rich supporting passages, cross-references, and parallel texts that illuminate the original passage
