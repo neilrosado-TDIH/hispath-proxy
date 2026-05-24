@@ -132,44 +132,38 @@ function buildHisChoiceSystem({ excludedScriptures, excludedThemes }) {
   return DEVOTIONAL_SYSTEM + extra;
 }
 
+// ---------------------------------------------------------------------------
+// Verse Lookup (bible-api.com — free, no key needed)
+// ---------------------------------------------------------------------------
+async function lookupVerseText(reference) {
+  try {
+    const encoded = encodeURIComponent(reference);
+    const res = await fetch(`https://bible-api.com/${encoded}`);
+    if (!res.ok) return "";
+    const data = await res.json();
+    return data.text ? data.text.trim() : "";
+  } catch (_err) {
+    return "";
+  }
+}
+
 const BRANCH_SYSTEM = `You are a warm, compassionate, non-denominational Christian devotional writer continuing a deeper conversation.
 Based on the reader's chosen pathway, provide a focused, meaningful follow-up.
 
-You MUST return a JSON object with exactly this structure. No other format is acceptable:
-
+Respond in valid JSON with exactly two keys:
 {
-  "response": "your full pathway reflection here",
-  "additionalScriptures": [
-    {
-      "reference": "Book Chapter:Verse",
-      "text": "The complete verse text here word for word from the Bible, not paraphrased"
-    },
-    {
-      "reference": "Book Chapter:Verse",
-      "text": "The complete verse text here"
-    },
-    {
-      "reference": "Book Chapter:Verse",
-      "text": "The complete verse text here"
-    }
-  ]
+  "response": "Your follow-up reflection (300-500 words)",
+  "additionalScriptures": ["Book Chapter:Verse", "Book Chapter:Verse", "Book Chapter:Verse"]
 }
 
-CRITICAL RULES:
-- additionalScriptures MUST be an array of objects
-- Each object MUST have both "reference" AND "text" keys
-- "text" MUST contain the actual Bible verse word for word
-- NEVER return additionalScriptures as plain strings
-- NEVER return ["Romans 8:28", "Isaiah 40:31"] format
-- Always return exactly 3 verses
+Rules:
+- additionalScriptures must contain exactly 3 scripture references as strings
 - Choose verses specifically relevant to the pathway type and devotional theme
-
-Pathway-specific verse guidance:
-- "Go Deeper": theologically rich supporting passages, cross-references, and parallel texts that illuminate the original passage
-- "Need Comfort": warm, reassuring, peace-giving verses about God's faithfulness, nearness, and love
-- "Challenge Me": action-oriented, bold, convicting verses that call the reader to growth and obedience
-
-Do NOT include any text outside the JSON object. Do not use em dashes or en dashes anywhere - use regular hyphens (-) instead.
+- For "Go Deeper": theologically rich cross-references and parallel texts
+- For "Need Comfort": warm, reassuring verses about God's faithfulness and love
+- For "Challenge Me": action-oriented, bold verses that call the reader to growth
+- Do NOT include any text outside the JSON object
+- Do not use em dashes or en dashes - use regular hyphens (-) instead
 
 If you don't have full context about the original devotional, proceed graciously with the scripture reference provided. Never make the user feel like something went wrong. Always respond with warmth, encouragement, and depth.`;
 
@@ -268,21 +262,25 @@ app.post("/api/branch", async (req, res) => {
       }
     }
 
-    // If we successfully parsed JSON, normalise and return it
+    // If we successfully parsed JSON, enrich with verse text from Bible API
     if (parsed && typeof parsed === "object") {
-      // Normalise additionalScriptures: accept both string[] and object[] formats
-      let scriptures = [];
-      if (Array.isArray(parsed.additionalScriptures)) {
-        scriptures = parsed.additionalScriptures.map((item) => {
-          if (typeof item === "string") {
-            return { reference: item, text: "" };
-          }
-          return { reference: item.reference || "", text: item.text || "" };
-        });
-      }
+      const refs = Array.isArray(parsed.additionalScriptures)
+        ? parsed.additionalScriptures.map((item) => (typeof item === "string" ? item : item.reference || ""))
+        : [];
+
+      // Look up full verse text for each reference in parallel
+      const versesWithText = await Promise.all(
+        refs.filter(Boolean).map(async (ref) => {
+          const verseText = await lookupVerseText(ref);
+          return { reference: ref, text: verseText };
+        })
+      );
+
+      console.log("POST /api/branch enriched verses:", versesWithText.map((v) => ({ ref: v.reference, hasText: v.text.length > 0 })));
+
       res.json({
         response: parsed.response || "",
-        additionalScriptures: scriptures,
+        additionalScriptures: versesWithText,
       });
     } else {
       // Fallback: return raw text as the response
