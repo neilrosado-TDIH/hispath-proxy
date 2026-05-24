@@ -157,7 +157,7 @@ Respond in valid JSON with exactly two keys:
 }
 
 Rules:
-- additionalScriptures must contain exactly 3 scripture references as strings, never more than 3
+- additionalScriptures must contain between 2 and 4 scripture references as strings depending on depth
 - Choose verses specifically relevant to the pathway type and devotional theme
 - For "Go Deeper": theologically rich cross-references and parallel texts
 - For "Need Comfort": warm, reassuring verses about God's faithfulness and love
@@ -167,7 +167,7 @@ Rules:
 
 If you don't have full context about the original devotional, proceed graciously with the scripture reference provided. Never make the user feel like something went wrong. Always respond with warmth, encouragement, and depth.`;
 
-function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion }) {
+function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion, req_length }) {
   const directionMap = {
     goDeeper:
       "The reader chose 'Go Deeper'. Provide a theological deep-dive that unpacks the original passage with scholarly warmth. Include cross-references and historical context.",
@@ -183,7 +183,8 @@ function buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice
   parts.push(`Original reflection excerpt: "${reflectionText}"`);
   parts.push(direction);
   if (bibleVersion) parts.push(`Use the ${bibleVersion} translation for any additional scriptures.`);
-  parts.push("Provide 2-3 additional supporting scriptures.");
+  const verseCount = req_length === "quick" ? 2 : req_length === "deep" ? 4 : 3;
+  parts.push(\`Return exactly \${verseCount} additional scriptures.\`);
   return parts.join("\n");
 }
 
@@ -241,7 +242,8 @@ app.post("/api/branch", async (req, res) => {
     if (!["goDeeper", "needComfort", "challengeMe"].includes(branchChoice)) {
       return res.status(400).json({ error: "branchChoice must be one of: goDeeper, needComfort, challengeMe" });
     }
-    const userPrompt = buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion });
+    const { length: req_length } = req.body;
+    const userPrompt = buildBranchUserPrompt({ originalScripture, reflectionText, branchChoice, bibleVersion, req_length });
     const text = await callClaude(BRANCH_SYSTEM, userPrompt, 1500);
 
     console.log("POST /api/branch raw Claude response:", text);
@@ -270,7 +272,7 @@ app.post("/api/branch", async (req, res) => {
 
       // Look up full verse text for each reference in parallel
       const versesWithText = await Promise.all(
-        refs.filter(Boolean).slice(0, 3).map(async (ref) => {
+        refs.filter(Boolean).slice(0, 4).map(async (ref) => {
           const verseText = await lookupVerseText(ref);
           return { reference: ref, text: verseText };
         })
