@@ -270,9 +270,10 @@ app.post("/api/branch", async (req, res) => {
         ? parsed.additionalScriptures.map((item) => (typeof item === "string" ? item : item.reference || ""))
         : [];
 
-      // Look up full verse text for each reference in parallel
+      // Look up full verse text for each reference, capped to requested count
+      const requestedCount = req.body.verseCount || 3;
       const versesWithText = await Promise.all(
-        refs.filter(Boolean).slice(0, 4).map(async (ref) => {
+        refs.filter(Boolean).slice(0, requestedCount).map(async (ref) => {
           const verseText = await lookupVerseText(ref);
           return { reference: ref, text: verseText };
         })
